@@ -31,17 +31,20 @@ contains
     integer(i4), dimension(:,:), intent(inout) :: spin
     real(dp), intent(in) :: T
     integer(i4) :: i1,i2
-    real(dp) :: dH,r1,p
+    real(dp) :: dH,r1,p,EE
+    EE=Hamilt(spin)
     do i1=1,size(spin,dim=1)
       do i2=1,size(spin,dim=2)
         dH=DeltaH(spin,i1,i2)
         if(dH .le. 0._dp) then
           spin(i1,i2)=-spin(i1,i2)
+          EE=EE+dH
         else
           call random_number(r1)
-          p=p_metropolis(-dH/T)
+          p=p_metropolis(T,dH,EE)
           if(r1 < p ) then
             spin(i1,i2)=-spin(i1,i2)
+            EE=EE+dH
           end if
         end if
       end do

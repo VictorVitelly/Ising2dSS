@@ -65,11 +65,16 @@ contains
       f=k2**(1._dp/k1)
   end function qexp
   
-  function p_metropolis(x)
-    real(dp), intent(in) :: x    
+  function p_metropolis(T,dH,E)
+    real(dp), intent(in) :: T,dH,E
     real(dp) :: p_metropolis
-    p_metropolis=exp(x)
+    real(dp) :: T2,p1,p2
+    T2=2.5_dp
+    !p_metropolis=exp(-dH/T)
     !p_metropolis=qexp(-x)
+    p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*abs(E)))
+    p2=exp(-dH/T2)/(1._dp+exp(-(1._dp/T-1._dp/T2)*abs(E)))
+    p_metropolis=p1+p2
   end function
   
   recursive function find(x,parent) result(out)

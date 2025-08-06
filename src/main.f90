@@ -15,7 +15,7 @@ program main
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(0.01_dp,2.5_dp,30)
+  call vary_temp(0.25_dp,2.5_dp,30)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)
@@ -33,10 +33,10 @@ contains
   integer(i4), allocatable :: spin(:,:)
   open(10, file = 'data/therm.dat', status = 'replace')
   allocate(spin(N,N))
-    !call cold_start(spin)
-    call hot_start(spin)
-    do i=1,100*thermalization
-      if(i==1 .or. mod(i,50)==0 ) then
+    call cold_start(spin)
+    !call hot_start(spin)
+    do i=1,10*thermalization
+      if(i==1 .or. mod(i,eachsweep)==0 ) then
         write(10,*) i, Magnet(spin)/(real(N**2,dp) )
       end if
       call montecarlo(spin,T)
@@ -121,6 +121,9 @@ contains
     M(:)=0._dp
     !cs(:)=0._dp
     !cs2(:)=0._dp
+    do j=1,2*thermalization
+      call montecarlo(spin,T)
+    end do
     do j=1,Nmsrs2
       E2=0._dp
       M2=0._dp
