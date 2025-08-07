@@ -51,6 +51,24 @@ contains
     end do
   end subroutine montecarlo
   
+  subroutine montecarlo2(spin,T)
+    integer(i4), dimension(:,:), intent(inout) :: spin
+    real(dp), intent(in) :: T
+    integer(i4) :: i1,i2
+    real(dp) :: dH,r1,p,Energy
+    Energy=Hamilt(spin)
+    do i1=1,size(spin,dim=1)
+      do i2=1,size(spin,dim=2)
+        dH=DeltaH(spin,i1,i2)
+        call random_number(r1)
+        if(r1 < p_metropolis(T,dH,Energy) ) then
+          spin(i1,i2)=-spin(i1,i2)
+          Energy=Energy+dH
+        end if
+      end do
+    end do
+  end subroutine montecarlo2
+  
   subroutine cluster(spin,T) 
     real(dp),intent(in) :: T 
     integer(i4), dimension(N,N),intent(inout) :: spin
