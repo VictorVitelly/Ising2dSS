@@ -74,7 +74,7 @@ contains
   do k=1,Nts
   call hot_start(spin)
     T=Ti+(Tf-Ti)*real(k-1,dp)/real(Nts-1)
-    !write(*,*) k, T
+    write(*,*) k, T
     E(:)=0._dp
     M(:)=0._dp
     !cs(:)=0._dp
@@ -125,7 +125,7 @@ contains
     write(20,*) T, M_ave/vol, M_delta/vol
     write(30,*) T, suscep_ave/vol, suscep_delta/vol
     write(40,*) T, heat_ave/vol, heat_delta/vol
-    write(*,*) T, U4_ave, U4_delta
+    write(50,*) T, U4_ave, U4_delta
     !write(60,*) T, cs_ave,cs_delta
     !write(70,*) T, cs2_ave/(vol**2), cs2_delta/(vol**2)
   end do
