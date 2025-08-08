@@ -15,7 +15,7 @@ program main
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(0.1_dp,2.5_dp,11)
+  call vary_temp(0.25_dp,2.5_dp,8)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)
@@ -47,54 +47,6 @@ contains
   deallocate(spin)
   end subroutine thermalize
 
-  subroutine correlate(T0,Tf,NTs)
-  real(dp), intent(in) :: T0,Tf
-  integer(i4), intent(in) :: NTs
-  integer(i4) :: i,k,j,k2
-  integer(i4), allocatable :: spin(:,:)
-  real(dp), allocatable :: corr1(:,:)
-  real(dp), allocatable :: corr2(:,:,:)
-  real(dp), allocatable :: CF(:,:),CFprom(:,:),results(:,:),deltaresults(:,:)
-  real(dp) :: T
-  open(60, file = 'data/corrfunc.dat', status = 'replace')
-    allocate(corr1(N,Nmsrs))
-    allocate(corr2(N,N,Nmsrs))
-    allocate(CF(N,N))
-    allocate(CFprom(N,N))
-    allocate(spin(N,N))
-    allocate(results(N+1,NTs+1) )
-    allocate(deltaresults(N+1,NTs+1) )
-    k2=0
-    do j=0,NTs-1
-      T=T0+(Tf-T0)*real(j,dp)/real(NTs-1,dp)
-      write(*,*) T
-      k2=k2+1
-      call hot_start(spin)
-      call initialize2(corr1,corr2)
-      k=0
-      do i=1,sweeps
-        !call cluster(spin,T)
-        call montecarlo(spin,T)
-        if(i>thermalization .and. mod(i,eachsweep)==0) then
-          k=k+1
-          call correlation(spin,k,corr1,corr2)
-        end if
-      end do
-      call correlation_function2(corr1,corr2,CF,CFprom)
-      do i=1,N
-        results(i,k2)=CF(iv(i),1)
-        deltaresults(i,k2)=CFprom(iv(i),1)
-        !write(60,*) abs(i-1), CF(iv(i),1), CFprom(iv(i),1)
-      end do
-    end do
-    do i=1,N
-      write(60,*) abs(i-1), results(i,:), deltaresults(i,:)
-    end do
-    close(60)
-    deallocate(spin)
-    deallocate(corr1,corr2,CF,CFprom)
-  end subroutine correlate
-
   subroutine vary_temp(Ti,Tf,Nts)
   real(dp), intent(in) :: Ti,Tf
   integer(i4), intent(in) :: Nts
@@ -116,7 +68,7 @@ contains
   do k=1,Nts
   call hot_start(spin)
     T=Ti+(Tf-Ti)*real(k-1,dp)/real(Nts-1)
-    write(*,*) k, T
+    !write(*,*) k, T
     E(:)=0._dp
     M(:)=0._dp
     !cs(:)=0._dp
@@ -135,7 +87,7 @@ contains
           !call cluster2(spin,T,csx,csx2)
         end do
         MM=Magnet(spin)
-        EE=Hamilt(spin)
+        EE=Hamiltfbc(spin)
         E(j)=E(j)+EE
         M(j)=M(j)+abs(MM)
         E2=E2+EE**2
@@ -166,7 +118,7 @@ contains
     write(20,*) T, M_ave/vol, M_delta/vol
     write(30,*) T, suscep_ave/vol, suscep_delta/vol
     write(40,*) T, heat_ave/vol, heat_delta/vol
-    write(50,*) T, U4_ave, U4_delta
+    write(*,*) T, U4_ave, U4_delta
     !write(60,*) T, cs_ave,cs_delta
     !write(70,*) T, cs2_ave/(vol**2), cs2_delta/(vol**2)
   end do
