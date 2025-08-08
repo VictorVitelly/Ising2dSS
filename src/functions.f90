@@ -118,16 +118,30 @@ contains
   function p_metropolis(T,dH,E)
     real(dp), intent(in) :: T,dH,E
     real(dp) :: p_metropolis
-    real(dp) :: T2,p1,p2
+    real(dp) :: ptot,T2,p1,p2
     T2=2.5_dp
-    !p_metropolis=exp(-dH/T)
+    !ptot=exp(-dH/T)
     !p_metropolis=qexp(-x)
-    !p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*abs(E)))
-    !p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*abs(E)))
-    p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*E ))
-    p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*E ))
-    p_metropolis=min(1._dp,p1+p2)
+    p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*abs(E)))
+    p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*abs(E)))
+    !p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*E ))
+    !p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*E ))
+    ptot=p1+p2
+    p_metropolis=min(1._dp,ptot)
   end function
+
+  function p_link(T)
+    real(dp), intent(in) :: T
+    real(dp) :: p_link
+    real(dp) :: p1,p2,T2,beta1,beta2
+    T2=2.5_dp
+    beta1=1._dp/T
+    beta2=1._dp/T2
+    !p_link=1-exp(-2._dp*beta1)
+    p1=(1._dp-exp(-2._dp*beta1))/(1._dp +exp(2._dp*(beta1-beta2)))
+    p2=(1._dp-exp(-2._dp*beta2))/(1._dp +exp(-2._dp*(beta1-beta2)))
+    p_link=p1+p2
+  end function p_link
   
   recursive function find(x,parent) result(out)
     integer(i4), intent(in) :: x

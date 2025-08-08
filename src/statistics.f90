@@ -68,6 +68,15 @@ contains
       end do
     end do
   end subroutine montecarlo2
+
+  subroutine flip_sign(spin,i)
+    integer(i4), dimension(:,:), intent(inout) :: spin
+    integer(i4), intent(in) :: i
+    integer(i4) :: j
+    if(mod(i,eachsweep)==0) then
+      spin(:,:)=-spin(:,:)
+    end if
+  end subroutine flip_sign
   
   subroutine cluster(spin,T) 
     real(dp),intent(in) :: T 
@@ -76,18 +85,18 @@ contains
     integer(i4) :: i,j,label(N,N),parent(N*N),next_label,left_label,up_label
     logical, allocatable :: flip_cluster(:)
     real(dp) :: r,p
-    
+
     do i=1,N
       do j=1,N
         if(spin(i,j)==spin(mod(i,N)+1,j) ) then
-          p=1._dp-exp(-2._dp/T )
+          p=p_link(T)
           call random_number(r)
           bond_x(i,j)=(r<p)
         else
           bond_x(i,j)=.false.
         end if
         if(spin(i,j)==spin(i,mod(j,N)+1) ) then
-          p=1._dp-exp(-2._dp/T )
+          p=p_link(T)
           call random_number(r)
           bond_y(i,j)=(r<p)
         else

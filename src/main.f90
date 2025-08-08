@@ -11,11 +11,11 @@ program main
   call cpu_time(starting)
   
   !Write thermalization history in a file and computes autocorrelation
-  call thermalize(2.5_dp)
+  call thermalize(1.5_dp)
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(0.25_dp,2.5_dp,8)
+  call vary_temp(0.1_dp,2.5_dp,20)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)
@@ -31,19 +31,25 @@ contains
   real(dp), intent(in) :: T
   integer(i4) :: i
   integer(i4), allocatable :: spin(:,:)
-  open(10, file = 'data/therm.dat', status = 'replace')
+  real(dp) :: vol
+  open(10, file = 'data/historym.dat', status = 'replace')
+  open(20, file = 'data/historye.dat', status = 'replace')
+  vol=real(N**2,dp)
   allocate(spin(N,N))
     call cold_start(spin)
     !call hot_start(spin)
-    do i=1,10*thermalization
+    do i=1,100*thermalization
       if(i==1 .or. mod(i,eachsweep)==0 ) then
-        write(10,*) i, Magnet(spin)/(real(N**2,dp) )
+        write(10,*) i, Magnet(spin)/vol
+        write(20,*) i, Hamiltfbc(spin)/vol
       end if
-      call montecarlo2(spin,T)
-      !call cluster(spin,T)
+      !call montecarlo2(spin,T)
+      !call flip_sign(spin,i)
+      call cluster(spin,T)
     end do
     !call autocorrelation(T,30,spin)
   close(10)
+  close(20)
   deallocate(spin)
   end subroutine thermalize
 
@@ -74,7 +80,8 @@ contains
     !cs(:)=0._dp
     !cs2(:)=0._dp
     do j=1,2*thermalization
-      call montecarlo2(spin,T)
+      !call montecarlo2(spin,T)
+      call cluster(spin,T)
     end do
     do j=1,Nmsrs2
       E2=0._dp
@@ -82,8 +89,8 @@ contains
       M4=0._dp
       do i=1,Nmsrs
         do i2=1,eachsweep
-          call montecarlo2(spin,T)
-          !call cluster(spint,T)
+          !call montecarlo2(spin,T)
+          call cluster(spin,T)
           !call cluster2(spin,T,csx,csx2)
         end do
         MM=Magnet(spin)
