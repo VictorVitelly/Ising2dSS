@@ -108,25 +108,54 @@ contains
     real(dp) :: k1,k2
       k1=1._dp-q
       k2=1._dp+(1._dp -q)*x
-      !if( k2 .le.  0._dp) then
-      !  write(*,*) "Error"
-      !  stop
-      !end if
+      if( k2 .le.  0._dp) then
+        write(*,*) "Error"
+        stop
+      end if
       f=k2**(1._dp/k1)
   end function qexp
+  
+  function tsallis(x)
+    real(dp), intent(in) :: x
+    real(dp) :: k1,k2,tsallis
+    k2=1._dp-(1-q)*x
+    k1=q/(1._dp-q)
+    if( k2 .le.  0._dp) then
+      tsallis=0._dp
+    end if
+    tsallis=k1**k2
+  end function tsallis
   
   function p_metropolis(T,dH,E)
     real(dp), intent(in) :: T,dH,E
     real(dp) :: p_metropolis
-    real(dp) :: ptot,T2,p1,p2
+    real(dp) :: ptot,T2,p1,p2,k2
     T2=2.5_dp
+    
     !ptot=exp(-dH/T)
-    !p_metropolis=qexp(-x)
-    p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*abs(E)))
-    p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*abs(E)))
+    
+    !If(dH<0) then
+    !  ptot=1.
+    !else
+    !  ptot=qexp(-dH/T)
+    !end if
+    p1=q/(1._dp-q)
+    p2=T-(1._dp-q)*(E+dH)
+    if(p2 .le. 0._dp) then 
+      ptot=0._dp
+    else
+      k2=T-(1._dp-q)*E
+      !if (k2 .le. 0._dp) then
+      !  write(*,*) 'Error', (p2/k2), (p2/k2)**int(p1)
+        !stop  
+      !end if
+      ptot=(p2/k2)**int(p1)
+    end if
+    !p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*abs(E)))
+    !p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*abs(E)))
     !p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*E ))
     !p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*E ))
-    ptot=p1+p2
+    !ptot=p1+p2
     p_metropolis=min(1._dp,ptot)
   end function
 
