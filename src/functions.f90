@@ -30,6 +30,7 @@ contains
         Hamilt=Hamilt-real(spin(i,j),dp)*neigh
       end do
     end do
+    !Hamilt=Hamilt/real(N**2,dp)
   end function Hamilt
 
   function DeltaH(spin,i,j)
@@ -37,7 +38,7 @@ contains
     integer(i4),intent(in) :: i,j
     real(dp) :: DeltaH,neigh
     neigh=real(spin(iv(i+1),j)+spin(iv(i-1),j)+spin(i,iv(j+1))+spin(i,iv(j-1)),dp)
-    DeltaH=2._dp*real(spin(i,j),dp)*neigh
+    DeltaH=2._dp*real(spin(i,j),dp)*neigh !/real(N**2,dp)
   end function DeltaH
   
   function Hamiltfbc(spin)
@@ -108,56 +109,47 @@ contains
     real(dp) :: k1,k2
       k1=1._dp-q
       k2=1._dp+(1._dp -q)*x
-      if( k2 .le.  0._dp) then
-        write(*,*) "Error"
-        stop
-      end if
       f=k2**(1._dp/k1)
   end function qexp
-  
-  function tsallis(x)
-    real(dp), intent(in) :: x
-    real(dp) :: k1,k2,tsallis
-    k2=1._dp-(1-q)*x
-    k1=q/(1._dp-q)
-    if( k2 .le.  0._dp) then
-      tsallis=0._dp
-    end if
-    tsallis=k1**k2
-  end function tsallis
   
   function p_metropolis(T,dH,E)
     real(dp), intent(in) :: T,dH,E
     real(dp) :: p_metropolis
-    real(dp) :: ptot,T2,p1,p2,k2
-    T2=2.5_dp
-    
-    !ptot=exp(-dH/T)
-    
-    !If(dH<0) then
-    !  ptot=1.
-    !else
-    !  ptot=qexp(-dH/T)
-    !end if
+    real(dp) :: ptot,p1,p2,k2
     p1=q/(1._dp-q)
-    p2=T-(1._dp-q)*(E+dH)
+    p2=1._dp-((1._dp-q)*dH/(2._dp*T))
     if(p2 .le. 0._dp) then 
       ptot=0._dp
     else
-      k2=T-(1._dp-q)*E
+      k2=1._dp+((1._dp-q)*dH/(2._dp*T))
       !if (k2 .le. 0._dp) then
-      !  write(*,*) 'Error', (p2/k2), (p2/k2)**int(p1)
+      !  write(*,*) 'Error', dH, k2
         !stop  
       !end if
-      ptot=(p2/k2)**int(p1)
+      ptot=(p2/k2)**(p1)
     end if
-    !p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*abs(E)))
-    !p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*abs(E)))
-    !p1=exp(-dH/T)/(1._dp+exp( (1._dp/T-1._dp/T2)*E ))
-    !p2=exp(-dH/T2)/(1._dp+exp( -(1._dp/T-1._dp/T2)*E ))
-    !ptot=p1+p2
-    p_metropolis=min(1._dp,ptot)
-  end function
+    p_metropolis=ptot
+  end function p_metropolis
+  
+  function p_metropolis2(T,dH,E)
+    real(dp), intent(in) :: T,dH,E
+    real(dp) :: p_metropolis2
+    real(dp) :: T2,p1,p2
+    T2=2.5_dp
+    !p1=exp(-dH/(2._dp*T))+exp(-dH/(2._dp*T2))
+    !p2=exp(dH/(2._dp*T))+exp(dH/(2._dp*T2))
+    !p_metropolis2=p1/p2
+    !p1=exp(-dH/T)/(1._dp+exp((1._dp/T-1._dp/T2)*abs(E)))
+    !p2=exp(-dH/T2)/(1._dp+exp(-(1._dp/T-1._dp/T2)*abs(E)))
+    !p_metropolis2=p1+p2
+    !p_metropolis2=(exp(-dH/T)+exp(-dH/T2) )/2._dp
+    call random_number(p1)
+    if(p1<0.5_dp) then
+      p_metropolis2=exp(-dH/T2)
+    else 
+      p_metropolis2=exp(-dH/T)
+    end if
+  end function p_metropolis2
 
   function p_link(T)
     real(dp), intent(in) :: T

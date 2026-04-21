@@ -41,6 +41,7 @@ contains
           Energy=Energy+dH
         else
           call random_number(r1)
+          !p=exp(-dH/T)
           p=p_metropolis(T,dH,Energy)
           if(r1 < p ) then
             spin(i1,i2)=-spin(i1,i2)
@@ -50,24 +51,6 @@ contains
       end do
     end do
   end subroutine montecarlo
-  
-  subroutine montecarlo2(spin,T)
-    integer(i4), dimension(:,:), intent(inout) :: spin
-    real(dp), intent(in) :: T
-    integer(i4) :: i1,i2
-    real(dp) :: dH,r1,p,Energy
-    Energy=Hamilt(spin)
-    do i1=1,size(spin,dim=1)
-      do i2=1,size(spin,dim=2)
-        dH=DeltaH(spin,i1,i2)
-        call random_number(r1)
-        if(r1 < p_metropolis(T,dH,Energy) ) then
-          spin(i1,i2)=-spin(i1,i2)
-          Energy=Energy+dH
-        end if
-      end do
-    end do
-  end subroutine montecarlo2
 
   subroutine flip_sign(spin,i)
     integer(i4), dimension(:,:), intent(inout) :: spin
@@ -288,7 +271,7 @@ contains
     
   end subroutine cluster2
 
-
+  
   !Error statistics
 
   subroutine standard_error(x,y,deltay)
