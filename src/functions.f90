@@ -110,7 +110,7 @@ contains
     real(dp) :: k1,k2
       k1=1._dp-q
       k2=1._dp+(1._dp -q)*x
-      if(k2>0) then
+      if(k2>0._dp) then
         f=k2**(1._dp/k1)
       else 
         f=0._dp

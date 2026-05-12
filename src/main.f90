@@ -15,7 +15,7 @@ program main
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(1.0_dp,5._dp,30)
+  call vary_temp(0.2_dp,4.2_dp,12)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)

@@ -62,15 +62,15 @@ contains
     do i1=1,size(spin,dim=1)
       do i2=1,size(spin,dim=2)
         dH=DeltaH(spin,i1,i2)
-        if(dH .le. 0._dp) then 
-          spin(i1,i2)=-spin(i1,i2)
-          Energy=Energy+dH
-        else
+        !if(dH .le. 0._dp) then
+        !  spin(i1,i2)=-spin(i1,i2)
+        !  Energy=Energy+dH
+        !else
           call random_number(r1)
           !p=(qexp(-dH/(T-(1._dp-q)*Energy) ))**q
           !if(1._dp-(1._dp-q)*(Energy+dH)/T>0) then
-            p=(qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q
-            !p=min((qexp(dH/(-(q-1._dp)*Energy-T )))**q,1._dp)
+          !p=(qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q
+          p=min((qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q,1._dp)
             !p=(qexp(-dH/T))**q
           !else 
           !  p=0._dp
@@ -80,7 +80,7 @@ contains
             spin(i1,i2)=-spin(i1,i2)
             Energy=Energy+dH
           end if
-        end if
+        !end if
       end do
     end do
   end subroutine montecarlobien
