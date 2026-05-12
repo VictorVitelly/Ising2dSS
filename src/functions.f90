@@ -21,7 +21,8 @@ contains
     integer(i4), dimension(:,:), intent(in) :: spin
     real(dp) :: Hamilt,neigh
     integer(i4) :: i,j
-    Hamilt=0._dp
+    Hamilt=2._dp*real(N**2,dp)
+    !Hamilt=0._dp
     do i=1,size(spin,dim=1)
       do j=1,size(spin,dim=2)
         !neigh=real(spin(iv(i+1),j)+spin(iv(i-1),j)+spin(i,iv(j+1))+spin(i,iv(j-1)),dp)
@@ -109,7 +110,11 @@ contains
     real(dp) :: k1,k2
       k1=1._dp-q
       k2=1._dp+(1._dp -q)*x
-      f=k2**(1._dp/k1)
+      if(k2>0) then
+        f=k2**(1._dp/k1)
+      else 
+        f=0._dp
+      end if  
   end function qexp
   
   function p_metropolis(T,dH,E)

@@ -15,7 +15,7 @@ program main
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(0.1_dp,5.1_dp,30)
+  call vary_temp(1.0_dp,5._dp,30)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)
@@ -74,6 +74,8 @@ contains
   vol=real(N**2,dp)
   do k=1,Nts
   call hot_start(spin)
+  !call cold_start(spin)
+  !spin(:,:)=1
     T=Ti+(Tf-Ti)*real(k-1,dp)/real(Nts-1)
     write(*,*) k, 'de', Nts
     E(:)=0._dp
@@ -83,6 +85,7 @@ contains
     do j=1,2*thermalization
       !call montecarlo(spin,T)
       call montecarlobien(spin,T)
+      !write(*,*) Hamilt(spin)
       !call cluster(spin,T)
     end do
     do j=1,Nmsrs2
