@@ -8,6 +8,7 @@ program main
   use measurements
   implicit none
 
+  call init_vecs()
   call cpu_time(starting)
   
   !Write thermalization history in a file and computes autocorrelation
@@ -15,7 +16,7 @@ program main
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(0.2_dp,4.2_dp,12)
+  call vary_temp(0.01_dp,0.5_dp,50)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)
@@ -37,7 +38,8 @@ contains
   vol=real(N**2,dp)
   allocate(spin(N,N))
     !call cold_start(spin)
-    call hot_start(spin)
+    !call hot_start(spin)
+    spin=-1
     do i=1,10*thermalization
       if(i==1 .or. mod(i,10)==0 ) then
         write(10,*) i, Magnet(spin)/vol
@@ -59,8 +61,8 @@ contains
   integer(i4), intent(in) :: Nts
   integer(i4), dimension(N,N) :: spin
   integer(i4) :: i,i2,j,k
-  real(dp), dimension(Nmsrs2) :: E,M,suscep,heat,U4
-  real(dp) :: T,vol,norm,EE,MM,E_ave,E_delta,M_ave,M_delta,E2,M2,M4
+  real(dp), dimension(Nmsrs2) :: E,M,suscep,heat,U4,AR
+  real(dp) :: T,vol,norm,EE,MM,E_ave,E_delta,M_ave,M_delta,E2,M2,M4,arr,AR_ave,AR_err
   real(dp) :: suscep_ave,suscep_delta,heat_ave,heat_delta,U4_ave,U4_delta
   !real(dp) :: csx,csx2,cs(Nmsrs2),cs2(Nmsrs2),cs_ave,cs_delta,cs2_ave,cs2_delta
   open(10, file = 'data/energy.dat', status = 'replace')
@@ -68,6 +70,7 @@ contains
   open(30, file = 'data/susceptibility.dat', status = 'replace')
   open(40, file = 'data/heat.dat', status = 'replace')
   open(50, file = 'data/binder.dat', status = 'replace')
+  open(60, file = 'data/arate.dat', status = 'replace')
   !open(60, file = 'data/rank.dat', status = 'replace')
   !open(70, file = 'data/rank2.dat', status = 'replace')
   norm=real(Nmsrs,dp)
@@ -80,12 +83,13 @@ contains
     write(*,*) k, 'de', Nts
     E(:)=0._dp
     M(:)=0._dp
+    AR(:)=0._dp
     !cs(:)=0._dp
     !cs2(:)=0._dp
-    do j=1,2*thermalization
+    EE=Hamilt(spin)
+    do j=1,thermalization
       !call montecarlo(spin,T)
-      call montecarlobien(spin,T)
-      !write(*,*) Hamilt(spin)
+      call montecarlobien(spin,T,EE)
       !call cluster(spin,T)
     end do
     do j=1,Nmsrs2
@@ -95,12 +99,14 @@ contains
       do i=1,Nmsrs
         do i2=1,eachsweep
           !call montecarlo(spin,T)
-          call montecarlobien(spin,T)
+          call montecarlobien(spin,T,EE)
           !call cluster(spin,T)
           !call cluster2(spin,T,csx,csx2)
         end do
+        call metropolisbien(spin,T,EE,arr)
         MM=Magnet(spin)
         EE=Hamilt(spin)
+        AR(j)=AR(j)+arr
         E(j)=E(j)+EE
         M(j)=M(j)+abs(MM)
         E2=E2+EE**2
@@ -111,6 +117,7 @@ contains
       end do
       E(j)=E(j)/norm
       M(j)=M(j)/norm
+      AR(j)=AR(j)/norm
       E2=E2/norm
       M2=M2/norm
       M4=M4/norm
@@ -125,6 +132,7 @@ contains
     call mean_scalar(suscep,suscep_ave,suscep_delta)
     call mean_scalar(heat,heat_ave,heat_delta)
     call mean_scalar(U4,U4_ave,U4_delta)
+    call mean_scalar(AR,AR_ave,AR_err)
     !call mean_scalar(cs,cs_ave,cs_delta)
     !call mean_scalar(cs2,cs2_ave,cs2_delta)
     write(10,*) T, E_ave/(vol), E_delta/(vol)
@@ -132,7 +140,7 @@ contains
     write(30,*) T, suscep_ave/(vol), suscep_delta/(vol)
     write(40,*) T, heat_ave/(vol), heat_delta/(vol)
     write(50,*) T, U4_ave, U4_delta
-    !write(60,*) T, cs_ave,cs_delta
+    write(60,*) T, AR_ave,AR_err
     !write(70,*) T, cs2_ave/(vol**2), cs2_delta/(vol**2)
   end do
   
@@ -141,7 +149,7 @@ contains
   close(30)
   close(40)
   close(50)
-  !close(60)
+  close(60)
   !close(70)
   end subroutine vary_temp
   

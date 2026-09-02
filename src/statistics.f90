@@ -31,59 +31,86 @@ contains
     integer(i4), dimension(:,:), intent(inout) :: spin
     real(dp), intent(in) :: T
     integer(i4) :: i1,i2
-    real(dp) :: dH,r1,p,Energy
-    Energy=Hamilt(spin)
+    real(dp) :: dH,r1,p
     do i1=1,size(spin,dim=1)
       do i2=1,size(spin,dim=2)
         dH=DeltaH(spin,i1,i2)
         if(dH .le. 0._dp) then
           spin(i1,i2)=-spin(i1,i2)
-          Energy=Energy+dH
         else
           call random_number(r1)
-          !p=exp(-dH/T)
-          p=p_metropolis(T,dH,Energy)
+          !p=(qexp(-dH/T))**q
+          p=p_metropolis(T,dH)
           if(r1 < p ) then
             spin(i1,i2)=-spin(i1,i2)
-            Energy=Energy+dH
           end if
         end if
       end do
     end do
   end subroutine montecarlo
 
-  subroutine montecarlobien(spin,T)
+  subroutine montecarlobien(spin,T,Energy)
     integer(i4), dimension(:,:), intent(inout) :: spin
     real(dp), intent(in) :: T
+    real(dp), intent(inout) :: Energy
     integer(i4) :: i1,i2
-    real(dp) :: dH,r1,p,Energy,vol
-    vol=real(N**2,dp)
-    Energy=Hamilt(spin)
-    do i1=1,size(spin,dim=1)
-      do i2=1,size(spin,dim=2)
+    real(dp) :: dH,r1,p
+    do i1=1,N
+      do i2=1,N
         dH=DeltaH(spin,i1,i2)
-        !if(dH .le. 0._dp) then
-        !  spin(i1,i2)=-spin(i1,i2)
-        !  Energy=Energy+dH
-        !else
+        if(dH .le. 0._dp) then
+          spin(i1,i2)=-spin(i1,i2)
+          Energy=Energy+dH
+        else
           call random_number(r1)
           !p=(qexp(-dH/(T-(1._dp-q)*Energy) ))**q
-          !if(1._dp-(1._dp-q)*(Energy+dH)/T>0) then
-          !p=(qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q
-          p=min((qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q,1._dp)
+          p=(qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q
+          !p=min((qexp(-dH/(T-(1._dp-q)*Energy) ))**q,1._dp)
+          !p=min((qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q,1._dp)
             !p=(qexp(-dH/T))**q
-          !else 
-          !  p=0._dp
-          !end if  
           !write(*,*) Energy, p, qexp(-(Energy+dH)/T), qexp(-(Energy)/T)
           if(r1 < p) then
             spin(i1,i2)=-spin(i1,i2)
             Energy=Energy+dH
           end if
-        !end if
+        end if
       end do
     end do
   end subroutine montecarlobien
+  
+  subroutine metropolisbien(spin,T,Energy,AR)
+    integer(i4), dimension(:,:), intent(inout) :: spin
+    real(dp), intent(in) :: T
+    real(dp), intent(out) :: AR
+    real(dp), intent(inout) :: Energy
+    integer(i4) :: i1,i2
+    real(dp) :: dH,r1,p
+    AR=0._dp
+    do i1=1,N
+      do i2=1,N
+        dH=DeltaH(spin,i1,i2)
+        if(dH .le. 0._dp) then
+          spin(i1,i2)=-spin(i1,i2)
+          Energy=Energy+dH
+          AR=AR+1._dp
+        else
+          call random_number(r1)
+          !p=(qexp(-dH/(T-(1._dp-q)*Energy) ))**q
+          p=(qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q
+          !p=min((qexp(-dH/(T-(1._dp-q)*Energy) ))**q,1._dp)
+          !p=min((qexp(-(Energy+dH)/T)/qexp(-Energy/T))**q,1._dp)
+            !p=(qexp(-dH/T))**q
+          !write(*,*) Energy, p, qexp(-(Energy+dH)/T), qexp(-(Energy)/T)
+          if(r1 < p) then
+            spin(i1,i2)=-spin(i1,i2)
+            Energy=Energy+dH
+          end if
+        AR=AR+p
+        end if
+      end do
+    end do
+    AR=AR/vol
+  end subroutine metropolisbien
 
   subroutine flip_sign(spin,i)
     integer(i4), dimension(:,:), intent(inout) :: spin

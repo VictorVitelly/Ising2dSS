@@ -1,6 +1,7 @@
 module functions
     use iso_fortran_env, only : dp => real64, i4 => int32
-    use parameters, only : N, q
+    use parameters
+    use arrays
     implicit none
 
 contains
@@ -18,28 +19,27 @@ contains
   end function iv
 
   function Hamilt(spin)
-    integer(i4), dimension(:,:), intent(in) :: spin
+    integer(i4), dimension(N,N), intent(in) :: spin
     real(dp) :: Hamilt,neigh
     integer(i4) :: i,j
-    Hamilt=2._dp*real(N**2,dp)
+    Hamilt=2._dp*vol
     !Hamilt=0._dp
-    do i=1,size(spin,dim=1)
-      do j=1,size(spin,dim=2)
+    do i=1,N
+      do j=1,N
         !neigh=real(spin(iv(i+1),j)+spin(iv(i-1),j)+spin(i,iv(j+1))+spin(i,iv(j-1)),dp)
         !Hamilt=Hamilt-real(spin(i,j),dp)*neigh/2._dp
-        neigh=real(spin(iv(i+1),j)+spin(i,iv(j+1)),dp)
+        neigh=real(spin(ip(i),j)+spin(i,ip(j)),dp)
         Hamilt=Hamilt-real(spin(i,j),dp)*neigh
       end do
     end do
-    !Hamilt=Hamilt/real(N**2,dp)
   end function Hamilt
 
   function DeltaH(spin,i,j)
-    integer(i4), dimension(:,:), intent(in) :: spin
+    integer(i4), dimension(N,N), intent(in) :: spin
     integer(i4),intent(in) :: i,j
     real(dp) :: DeltaH,neigh
-    neigh=real(spin(iv(i+1),j)+spin(iv(i-1),j)+spin(i,iv(j+1))+spin(i,iv(j-1)),dp)
-    DeltaH=2._dp*real(spin(i,j),dp)*neigh !/real(N**2,dp)
+    neigh=real( spin(i,j)*(spin(ip(i),j)+spin(im(i),j)+spin(i,ip(j))+spin(i,im(j))),dp)
+    DeltaH=2._dp*neigh 
   end function DeltaH
   
   function Hamiltfbc(spin)
@@ -93,12 +93,12 @@ contains
   end function DeltaHfbc
 
   function Magnet(spin)
-    integer(i4), dimension(:,:), intent(in) :: spin
+    integer(i4), dimension(N,N), intent(in) :: spin
     integer(i4) :: i,j
     real(dp) :: Magnet
     Magnet=0._dp
-    do i=1,size(spin,dim=1)
-      do j=1,size(spin,dim=2)
+    do i=1,N
+      do j=1,N
         Magnet=Magnet+real(spin(i,j),dp)
       end do
     end do
@@ -117,8 +117,8 @@ contains
       end if  
   end function qexp
   
-  function p_metropolis(T,dH,E)
-    real(dp), intent(in) :: T,dH,E
+  function p_metropolis(T,dH)
+    real(dp), intent(in) :: T,dH
     real(dp) :: p_metropolis
     real(dp) :: ptot,p1,p2,k2
     p1=q/(1._dp-q)
@@ -135,6 +135,25 @@ contains
     end if
     p_metropolis=ptot
   end function p_metropolis
+  
+  function p_metropolisb(T,dH)
+    real(dp), intent(in) :: T,dH
+    real(dp) :: p_metropolisb
+    real(dp) :: ptot,p1,p2,k2
+    p1=1._dp/(1._dp-q)
+    p2=1._dp-((1._dp-q)*dH/(2._dp*T))
+    if(p2 .le. 0._dp) then 
+      ptot=0._dp
+    else
+      k2=1._dp+((1._dp-q)*dH/(2._dp*T))
+      !if (k2 .le. 0._dp) then
+      !  write(*,*) 'Error', dH, k2
+        !stop  
+      !end if
+      ptot=(p2/k2)**(p1)
+    end if
+    p_metropolisb=ptot
+  end function p_metropolisb
   
   function p_metropolis2(T,dH,E)
     real(dp), intent(in) :: T,dH,E
