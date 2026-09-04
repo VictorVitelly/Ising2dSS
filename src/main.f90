@@ -16,7 +16,7 @@ program main
 
   !Measure energy, magnetization, susceptibility, heat capacity and binder cumulant in
   !an interval of temperatures, (initial temp., final temp, n. of points between them)
-  call vary_temp(0.01_dp,0.5_dp,50)
+  call vary_temp(0.1_dp,0.5_dp,30)
 
   !Measure correlation function in an interval of temperatures
   !(initial temp., final temp, n. of points between them)
@@ -65,16 +65,28 @@ contains
   real(dp) :: T,vol,norm,EE,MM,E_ave,E_delta,M_ave,M_delta,E2,M2,M4,arr,AR_ave,AR_err
   real(dp) :: suscep_ave,suscep_delta,heat_ave,heat_delta,U4_ave,U4_delta
   !real(dp) :: csx,csx2,cs(Nmsrs2),cs2(Nmsrs2),cs_ave,cs_delta,cs2_ave,cs2_delta
-  open(10, file = 'data/energy.dat', status = 'replace')
-  open(20, file = 'data/magnetization.dat', status = 'replace')
-  open(30, file = 'data/susceptibility.dat', status = 'replace')
-  open(40, file = 'data/heat.dat', status = 'replace')
-  open(50, file = 'data/binder.dat', status = 'replace')
-  open(60, file = 'data/arate.dat', status = 'replace')
+  real(dp), allocatable :: corr1(:),corr2(:,:),CF(:,:,:),CF_ave(:,:),CF_err(:,:)
+  real(dp) :: xi2_ave,xi2_err
+  open(10, file = 'data/ene.dat', status = 'replace')
+  open(20, file = 'data/mag.dat', status = 'replace')
+  open(30, file = 'data/sus.dat', status = 'replace')
+  open(40, file = 'data/hea.dat', status = 'replace')
+  open(50, file = 'data/bin.dat', status = 'replace')
+  open(60, file = 'data/art.dat', status = 'replace')
+  open(70, file = 'data/xi2.dat', status = 'replace')
   !open(60, file = 'data/rank.dat', status = 'replace')
   !open(70, file = 'data/rank2.dat', status = 'replace')
+  
+  allocate(corr2(N,N))
+  allocate(corr1(N))
+  allocate(CF(N,N,Nmsrs2))
+  allocate(CF_ave(N,Nts))
+  allocate(CF_err(N,Nts))
+  
   norm=real(Nmsrs,dp)
   vol=real(N**2,dp)
+  !call cold_start(spin)
+  
   do k=1,Nts
   call hot_start(spin)
   !call cold_start(spin)
@@ -84,6 +96,7 @@ contains
     E(:)=0._dp
     M(:)=0._dp
     AR(:)=0._dp
+    CF(:,:,:)=0._dp
     !cs(:)=0._dp
     !cs2(:)=0._dp
     EE=Hamilt(spin)
@@ -96,6 +109,8 @@ contains
       E2=0._dp
       M2=0._dp
       M4=0._dp
+      corr1(:)=0._dp
+      corr2(:,:)=0._dp
       do i=1,Nmsrs
         do i2=1,eachsweep
           !call montecarlo(spin,T)
@@ -112,6 +127,7 @@ contains
         E2=E2+EE**2
         M2=M2+MM**2
         M4=M4+MM**4
+        call correlation(spin,corr1,corr2)
         !cs(j)=cs(j)+csx
         !cs2(j)=cs2(j)+csx2
       end do
@@ -124,6 +140,13 @@ contains
       suscep(j)=M2-M(j)**2
       heat(j)=E2-E(j)**2
       U4(j)=1._dp-M4/(3._dp*M2**2)
+      do i=1,N
+        do i2=1,N
+          CF(i,i2,j)=corr2(i,i2)/(norm)-(corr1(i)*corr1(i2))/(norm**2)
+          !write(*,*) corr2(1,2)/norm, corr1(1)/norm,corr1(2)/norm
+        end do
+      end do  
+      !write(*,*) CF(:,:,j)
       !cs(j)=cs(j)/norm
       !cs2(j)=cs2(j)/norm
     end do
@@ -135,12 +158,17 @@ contains
     call mean_scalar(AR,AR_ave,AR_err)
     !call mean_scalar(cs,cs_ave,cs_delta)
     !call mean_scalar(cs2,cs2_ave,cs2_delta)
+    call secondmomentum2(CF,xi2_ave,xi2_err) 
+    !do i=1,N 
+    !  mean_scalar(CF(i,1,:),CF_ave(i,k),CF_err(i,k))
+    !end do
     write(10,*) T, E_ave/(vol), E_delta/(vol)
     write(20,*) T, M_ave/(vol), M_delta/(vol)
     write(30,*) T, suscep_ave/(vol), suscep_delta/(vol)
     write(40,*) T, heat_ave/(vol), heat_delta/(vol)
     write(50,*) T, U4_ave, U4_delta
     write(60,*) T, AR_ave,AR_err
+    write(70,*) T, xi2_ave, xi2_err
     !write(70,*) T, cs2_ave/(vol**2), cs2_delta/(vol**2)
   end do
   
@@ -151,6 +179,7 @@ contains
   close(50)
   close(60)
   !close(70)
+  deallocate(corr2)
   end subroutine vary_temp
   
   subroutine correlate(Ti,Tf,NTs)

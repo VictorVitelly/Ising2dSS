@@ -15,26 +15,6 @@ contains
       corr2=0._dp
   end subroutine initialize
 
-  subroutine correlation(spin,corr1,corr2)
-    integer(i4), dimension(N,N), intent(in) :: spin
-    real(dp), dimension(N), intent(inout) :: corr1
-    real(dp), dimension(N,N), intent(inout) :: corr2
-    real(dp), dimension(N) :: spinvec
-    integer(i4) :: i1,i2
-    spinvec=0._dp
-    do i1=1,N
-      do i2=1,N
-        spinvec(i1)=spinvec(i1)+real(spin(i1,i2),dp)
-      end do
-    end do
-    do i1=1,N
-      corr1(i1)=corr1(i1)+spinvec(i1)
-      do i2=1,N
-        corr2(i1,i2)=corr2(i1,i2)+spinvec(i1)*spinvec(i2)
-      end do
-    end do
-  end subroutine correlation
-
   subroutine correlation_function(corr1,corr2,CF)
     real(dp), dimension(N), intent(in) :: corr1
     real(dp), dimension(N,N), intent(in) :: corr2

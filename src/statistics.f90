@@ -463,35 +463,53 @@ contains
       deltaheat=Sqrt(real(Mbins-1,dp)*jackk/real(Mbins,dp))
   end subroutine heat_jackk
   
-  subroutine binder(M2,M4,U,U_delta)
-    real(dp), dimension(Nmsrs), intent(in) :: M2,M4
-    real(dp), intent(out) :: U,U_delta
-    real(dp) :: M2_ave,M4_ave,Ntot,jackk
-    real(dp) :: M2_1(Mbins),M4_1(Mbins),U_ave(Mbins)
-    integer(i4) :: i,k
-    Ntot=real(Nmsrs,dp)-real(Nmsrs,dp)/real(Mbins,dp)
-    call mean_0(M2,M2_ave)
-    call mean_0(M4,M4_ave)
-    U=1._dp -M4_ave/(3._dp*M2_ave**2)
-    M2_1=0._dp
-    M4_1=0._dp
-    jackk=0._dp
-    do i=1,Mbins
-      do k=1,Nmsrs
-        if(k .le. (i-1)*Nmsrs/Mbins) then
-          M2_1(i)=M2_1(i)+M2(k)
-          M4_1(i)=M4_1(i)+M4(k)
-        else if(k > i*Nmsrs/Mbins) then
-          M2_1(i)=M2_1(i)+M2(k)
-          M4_1(i)=M4_1(i)+M4(k)        
-        end if
+  subroutine correlation(spin,corr1,corr2)
+    integer(i4), dimension(:,:), intent(in) :: spin
+    real(dp), dimension(N,N), intent(inout) :: corr2
+    real(dp), dimension(N), intent(inout) :: corr1
+    real(dp) :: spinvec(N)
+    integer(i4) :: i1,i2
+    real(dp) :: x 
+    spinvec=0._dp
+    x=real(N,dp)
+    do i1=1,N
+      do i2=1,N
+        spinvec(i1)=spinvec(i1)+real(spin(i1,i2),dp)
       end do
-    U_ave(i)=1._dp-M4_1(i)*Ntot/(3._dp*M2_1(i)**2)
     end do
-    do k=1,Mbins
-      jackk=jackk+(U_ave(k)-U )**2
+    spinvec(:)=spinvec(:)/x
+    do i1=1,N
+      corr1(i1)=corr1(i1)+(spinvec(i1))
+      do i2=1,N
+        corr2(i1,i2)=corr2(i1,i2)+spinvec(i1)*spinvec(i2)
+      end do
     end do
-    U_delta=Sqrt(real(Mbins-1,dp)*jackk/real(Mbins,dp))
-  end subroutine binder
+  end subroutine correlation
+  
+  subroutine secondmomentum2(CF,xi2_ave,xi2_err)
+  real(dp),dimension(N,N,Nmsrs2),intent(in) :: CF
+  real(dp),intent(out) :: xi2_ave,xi2_err 
+  integer(i4) :: i1,i2,i3
+  real(dp) :: F1(Nmsrs2),F2(Nmsrs2),F12(Nmsrs2),F12_ave,F12_err
+  F1(:)=0._dp
+  F2(:)=0._dp
+  do i1=1,Nmsrs2
+    do i2=1,N
+      do i3=1,N
+        F1(i1)=F1(i1)+CF(i2,i3,i1)
+        F2(i1)=F2(i1)+CF(i2,i3,i1)*COS(real(i2-1,dp)*2._dp*PI/real(N,dp)) &
+        &*COS(real(i3-1,dp)*2._dp*PI/real(N,dp))
+      end do
+    end do
+  end do
+  do i1=1,Nmsrs2
+    F12(i1)=F1(i1)/F2(i1)
+    !write(*,*) F1(i1), F2(i1), F12(i1)
+  end do
+  call mean_scalar(F12,F12_ave,F12_err)
+  xi2_ave=sqrt( (F12_ave -1._dp))/(2._dp*abs(SIN(PI/real(N,dp))) ) 
+  xi2_err=F12_err/(4._dp*sqrt(F12_ave-1._dp)*abs(SIN(PI/real(N,dp))) )
+  !write(*,*) xi2_ave,xi2_err
+  end subroutine secondmomentum2
 
 end module statistics
